@@ -7,12 +7,13 @@ using System.Threading.Tasks;
 
 namespace Proj.Services
 {
-    public class ElasticSearchManager<T> : IElasticSearchManager<T> where T : class 
+    public class ElasticSearchManager<T> : IElasticSearchManager<T> where T : class
     {
 
         private readonly IElasticClient _elasticClient;
         public ElasticSearchManager(IElasticClient elasticClient)
         {
+
             _elasticClient = elasticClient;
         }
 
@@ -24,6 +25,35 @@ namespace Proj.Services
             var models = await _elasticClient.SearchAsync<T>(searchDescriptor.Index(indexName));
 
             return models.Documents.ToList();
+        }
+        
+        public async Task<long> CountAsync()
+        {
+            var indexName = typeof(T).Name.ToLower() + "_index";
+
+            var models = await _elasticClient.CountAsync<T>( x=> x.Index(indexName) );
+
+            return models.Count;
+        }
+
+        public async Task<bool> BulkAll(List<T> items)
+        {
+
+            var indexName = typeof(T).Name.ToLower() + "_index";
+
+            var bulk = new BulkRequest(indexName)
+            {
+                Operations = new List<IBulkOperation>()
+            };
+            foreach (var item in items)
+            {
+                bulk.Operations.Add(new BulkIndexOperation<T>(item));
+            }
+
+
+            var model = await _elasticClient.BulkAsync(bulk);
+            //bulk, x => x.Index(indexName)
+            return true;
         }
 
         public async Task<T> AddOrUpdateAsync(T item)
@@ -46,13 +76,13 @@ namespace Proj.Services
             return model.Source;
         }
 
-        public  async void DeleteIndexAsync()
+        public async void DeleteIndexAsync()
         {
             var indexName = typeof(T).Name.ToLower() + "_index";
 
             await _elasticClient.Indices.DeleteAsync(indexName);
 
-            
+
         }
 
         public async Task<bool> DeleteAsync(T item)
@@ -93,10 +123,12 @@ namespace Proj.Services
 
     public interface IElasticSearchManager<T> where T : class
     {
+        public Task<long> CountAsync();
         public Task<T> GetAsync(T item);
         public Task<bool> DeleteAsync(T item);
-        public void  DeleteIndexAsync();
+        public void DeleteIndexAsync();
         public Task<T> AddOrUpdateAsync(T item);
+        public Task<bool> BulkAll(List<T> items);
         public Task<List<T>> SearchAsync(SearchDescriptor<T> searchDescriptor);
         public Task<List<T>> LoadAsync(List<T> list, string indexName = null);
     }

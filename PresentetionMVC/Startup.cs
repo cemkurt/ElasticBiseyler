@@ -33,7 +33,8 @@ namespace PresentetionMVC
 
             services.AddSingleton(typeof(IElasticSearchManager<>), typeof(ElasticSearchManager<>));
 
-            var settings = new ConnectionSettings();
+            var settings = new ConnectionSettings(new Uri("http://20.105.200.33:9200"));
+            settings.BasicAuthentication("elasticsiri", "DkIedPPSCb");
 
             services.AddSingleton<IElasticClient>(new ElasticClient(settings));
 
@@ -42,21 +43,24 @@ namespace PresentetionMVC
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, DatabaseContext databaseContext)
-        { app.UseDeveloperExceptionPage();
+        { 
             if (env.IsDevelopment())
             {
                
             }
             else
             {
-                app.UseExceptionHandler("/Home/Error");
+           //     app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            app.UseDeveloperExceptionPage();
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
-            //    ApplicationDbInitializer.SeedData(databaseContext);
+               ApplicationDbInitializer.SeedData(databaseContext);
 
             app.UseRouting();
 

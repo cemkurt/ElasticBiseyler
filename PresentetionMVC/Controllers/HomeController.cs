@@ -18,7 +18,7 @@ namespace PresentetionMVC.Controllers
         private readonly IConfiguration configuration;
         private readonly ICategoryService _categoryService;
         private readonly IElasticSearchManager<Category> _elasticSearchManager;
-        public HomeController(ILogger<HomeController> logger, IConfiguration configuration, ICategoryService categoryService, IElasticSearchManager<Category> elasticSearchManager)
+        public HomeController(IConfiguration configuration, ICategoryService categoryService, IElasticSearchManager<Category> elasticSearchManager, ILogger<HomeController> logger)
         {
             _elasticSearchManager = elasticSearchManager;
             _categoryService = categoryService;
@@ -28,24 +28,49 @@ namespace PresentetionMVC.Controllers
 
         public async Task<IActionResult> Index()
         {
+
+
             var models = await _categoryService.CategoriesAll();
 
             //    await _elasticSearchManager.LoadAsync(models);
 
-            SearchDescriptor<Category> searchQuery =
-                new SearchDescriptor<Category>().Query(x => x.MatchPhrasePrefix(v => v.Field(y => y.Name).Query("Bilgisayar")));
+            //SearchDescriptor<Category> searchQuery = new SearchDescriptor<Category>()
+            //    .Query(x => x.MatchPhrasePrefix(v => v.Field(y => y.Name).Query("eda"))
+            //    );
+
+            //CountDescriptor<Category> count = new CountDescriptor<Category>()
+            //    .Query(x => x.MatchPhrasePrefix(v => v.Field(y => y.Name).Query("eda"))
+            //    );
 
 
+            var toplam= await _elasticSearchManager.CountAsync();
 
-            //  var modelsE = await _elasticSearchManager.SearchAsync(searchQuery);
+            //    var modelsE = await _elasticSearchManager.SearchAsync(searchQuery);
 
 
             //   var modelsE = await _elasticSearchManager.GetAsync(new Category { Id = 3 });
 
-              _elasticSearchManager.DeleteIndexAsync();
+            //   _elasticSearchManager.DeleteIndexAsync();
 
-            // var data = configuration.GetSection("siri").Value;
-              var s = await _elasticSearchManager.AddOrUpdateAsync(new Category { Id = 9, Name = "edammmmm" });
+
+            string[] names = "eda,cem,babam,siri,emre,ali,cebrail,ilter,mahbup,merve,gökhan,emin,adil,adnan,sude,annem".Split(',');
+            string[] surNames = "toptan,kurt,kaya,yılmaz,dilsiz,köse,arsuz,ekşi,ekşioğlu,ekşilergil,topal".Split(',');
+            var newList = new List<Category>();
+            var random = new Random();
+            for (int i = 0; i < 1000; i++)
+            {
+                newList.Add(new Category
+                {
+                    Id = random.Next(10000000, 999999999),
+                    Name = names.OrderBy(x => Guid.NewGuid()).FirstOrDefault()
+                    // Surname = surNames.OrderBy(x => Guid.NewGuid()).FirstOrDefault()
+                });
+            }
+
+         var sbulk = _elasticSearchManager.BulkAll(newList);
+
+            //    var s = await _elasticSearchManager.AddOrUpdateAsync(new Category { Id = 9, Name = "eda" });
+
 
             //   await _elasticSearchManager.DeleteAsync(modelsE.FirstOrDefault());
 
